@@ -20,12 +20,13 @@ A comprehensive, production-ready rate limiter implementation in TypeScript with
 4. [System Architecture](#-system-architecture)
 5. [Project Structure](#-project-structure)
 6. [Quick Start](#-quick-start)
-7. [API Reference](#-api-reference)
-8. [Storage Options](#-storage-options)
-9. [Distributed Rate Limiting](#-distributed-rate-limiting)
-10. [Algorithm Selection Guide](#-algorithm-selection-guide)
-11. [Best Practices](#-best-practices)
-12. [Real-World Examples](#-real-world-examples)
+7. [Real-World Use Cases](#-real-world-use-cases)
+8. [API Reference](#-api-reference)
+9. [Storage Options](#-storage-options)
+10. [Distributed Rate Limiting](#-distributed-rate-limiting)
+11. [Algorithm Selection Guide](#-algorithm-selection-guide)
+12. [Best Practices](#-best-practices)
+13. [Real-World Examples](#-real-world-examples)
 
 ---
 
@@ -480,7 +481,8 @@ Rate Limiter/
 │   │   │   ├── redis-store.ts  # Redis (distributed)
 │   │   │   └── index.ts
 │   │   ├── types/              # TypeScript interfaces
-│   │   │   └── index.ts
+│   │   │   ├── index.ts
+│   │   │   └── use-cases.ts    # Real-world use case definitions
 │   │   ├── config/             # Configuration
 │   │   │   └── rules.ts
 │   │   └── index.ts            # Main server file
@@ -491,7 +493,27 @@ Rate Limiter/
 │   ├── src/
 │   │   ├── App.tsx            # Main application
 │   │   ├── main.tsx           # Entry point
-│   │   └── index.css          # Styles
+│   │   ├── index.css          # Styles
+│   │   ├── components/        # React components
+│   │   │   ├── Header.tsx
+│   │   │   ├── AlgorithmSelector.tsx
+│   │   │   ├── RequestControls.tsx
+│   │   │   ├── RequestLog.tsx
+│   │   │   ├── Statistics.tsx
+│   │   │   ├── ModeSwitcher.tsx
+│   │   │   ├── UseCaseSelector.tsx
+│   │   │   └── UseCaseDetails.tsx
+│   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── useRateLimiter.ts
+│   │   │   ├── useUseCases.ts
+│   │   │   └── useUseCaseRequest.ts
+│   │   ├── types/             # TypeScript interfaces
+│   │   │   ├── index.ts
+│   │   │   └── use-cases.ts
+│   │   ├── constants/         # Constants and configs
+│   │   │   └── algorithms.tsx
+│   │   └── utils/             # Utility functions
+│   │       └── colors.ts
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── tailwind.config.js
@@ -541,10 +563,91 @@ Frontend starts on http://localhost:5173
 
 ### Using the Dashboard
 
+The dashboard has **two modes** for different learning approaches:
+
+#### Mode 1: Algorithm Testing
 1. **Select an Algorithm**: Click on any of the 5 algorithms
 2. **Configure Settings**: Adjust window size, max requests, and auto-send rate
 3. **Send Requests**: Click "Send Request" or enable "Auto Send"
 4. **Watch Results**: See real-time feedback with success/blocked status
+5. **Save Performance**: Compare different algorithms with the same number of requests
+
+#### Mode 2: Real-World Use Cases
+1. **Switch to Use Cases Mode**: Toggle the mode switcher
+2. **Select a Use Case**: Choose from 10 real-world scenarios (Login, Payment, Search, etc.)
+3. **Understand the Context**: Read why this limit exists and what happens when blocked
+4. **Test the Scenario**: Send requests and see how rate limiting works in practice
+5. **Learn from Examples**: See which companies use similar limits
+
+---
+
+## 🎯 Real-World Use Cases
+
+This project includes **10 real-world use cases** that demonstrate how rate limiting is applied in production systems. Each use case shows:
+
+- **Real API endpoints** (e.g., `/api/auth/login`, `/api/payments/process`)
+- **Appropriate rate limits** based on the use case
+- **Best algorithm choice** for that scenario
+- **Real-world context** explaining why the limit exists
+- **What happens** when requests are blocked
+- **Companies** using similar limits
+
+### Available Use Cases
+
+| Use Case | Endpoint | Limit | Algorithm | Why? |
+|----------|----------|-------|-----------|------|
+| 🔐 **Login Attempts** | `POST /api/auth/login` | 5 per 15 min | Sliding Window Log | Prevent brute force attacks |
+| 💳 **Payment Processing** | `POST /api/payments/process` | 3 per minute | Sliding Window Log | Money involved - need perfect accuracy |
+| 🔑 **Password Reset** | `POST /api/auth/reset-password` | 3 per hour | Sliding Window Log | Prevent account takeover |
+| 📖 **API Read Operations** | `GET /api/users/profile` | 100 per minute | Sliding Window Counter | Normal usage, prevent abuse |
+| 📤 **File Upload** | `POST /api/files/upload` | 10 per hour | Fixed Window | Storage costs money |
+| 🔍 **Search API** | `GET /api/search` | 20 per 10 sec | Token Bucket | Allow search bursts, limit average |
+| 📧 **Email Sending** | `POST /api/emails/send` | 100 per day | Fixed Window | Email services charge per email |
+| ✍️ **API Write Operations** | `POST /api/posts/create` | 10 per minute | Token Bucket | Allow posting bursts, prevent spam |
+| 🔔 **Burst Traffic API** | `POST /api/notifications/push` | 50 per 10 sec | Token Bucket | Handle event spikes |
+| ⚙️ **Background Job Queue** | `POST /api/jobs/submit` | 60 per minute | Leaking Bucket | Constant processing rate needed |
+
+### Example: Login Attempts Use Case
+
+**Scenario:** A user trying to guess passwords (brute force attack)
+
+**Configuration:**
+- **Limit:** 5 attempts per 15 minutes
+- **Algorithm:** Sliding Window Log (most accurate)
+- **Why:** Security critical - prevents brute force attacks. Need exact counting.
+
+**What Happens:**
+1. User makes 5 failed login attempts
+2. 6th attempt is **blocked** with HTTP 429
+3. User must wait 15 minutes or contact support
+4. System logs the security event
+
+**Real-World Usage:**
+- GitHub: 5 attempts per 15 minutes
+- Google: Similar limits with account lockout
+- Microsoft: Progressive delays after failed attempts
+- Banking Apps: Strict limits with 2FA requirements
+
+### How to Use Use Cases in the Dashboard
+
+1. **Switch to "Real-World Use Cases" mode** using the mode switcher
+2. **Select a use case** (e.g., "Login Attempts")
+3. **Read the explanation** to understand:
+   - What the endpoint does
+   - Why this limit exists
+   - What happens when blocked
+   - Which companies use similar limits
+4. **Send requests** to see rate limiting in action
+5. **Observe the behavior** - requests get blocked after the limit
+6. **Learn from context** - understand the real-world impact
+
+### Benefits of Use Cases
+
+✅ **Practical Learning**: See rate limiting in real scenarios, not just abstract examples  
+✅ **Context Understanding**: Learn WHY each limit exists  
+✅ **Algorithm Selection**: See which algorithm fits which use case  
+✅ **Industry Examples**: Know which companies use similar approaches  
+✅ **Better Decision Making**: Make informed choices for your own projects  
 
 ---
 
@@ -564,6 +667,8 @@ Frontend starts on http://localhost:5173
 | GET | `/api/sliding-window-counter` | Test Sliding Window Counter |
 | POST | `/api/test` | Dynamic testing with custom config |
 | GET | `/api/algorithms` | Get algorithm information |
+| GET | `/api/use-cases` | Get all real-world use cases |
+| POST | `/api/use-case-test` | Test a specific use case endpoint |
 
 ### Response Headers
 
@@ -803,6 +908,9 @@ Accuracy: 99.997%
 5. **Use Redis** for distributed systems
 6. **Always return rate limit headers**
 7. **Monitor and adjust** your limits based on real usage
+8. **Learn from real-world use cases** - see how companies implement rate limiting
+9. **Match limits to use cases** - security-critical endpoints need stricter limits
+10. **Understand the context** - why a limit exists is as important as the limit itself
 
 ---
 
